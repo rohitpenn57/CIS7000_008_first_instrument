@@ -30,11 +30,26 @@ def seconds_since(iso_timestamp: str) -> str:
     delta = datetime.now(timezone.utc) - then
     return f"{delta.total_seconds():.0f} seconds ({delta})"
 
+# Add entries as (name, ISO 8601 timestamp with UTC offset) once real
+# deadlines are known — COURSE-STEPS.md doesn't list any yet.
+DEADLINES: list[tuple[str, str]] = []
+
 @mcp.tool()
-def my_tool() -> str:
-    """YOURS. Rename it, give it a real purpose, make the model reach
-    something it couldn't before. (Track ideas: docs/TRACKS.md)"""
-    return "Not built yet — that's the point. Edit server.py."
+def next_deadline() -> str:
+    """The nearest upcoming course deadline and time remaining until it."""
+    now = datetime.now(timezone.utc)
+    upcoming = []
+    for name, iso_timestamp in DEADLINES:
+        due = datetime.fromisoformat(iso_timestamp)
+        if due.tzinfo is None:
+            due = due.replace(tzinfo=timezone.utc)
+        if due >= now:
+            upcoming.append((due, name))
+    if not upcoming:
+        return "No deadlines configured"
+    due, name = min(upcoming)
+    delta = due - now
+    return f"{name}: due {due.isoformat()} ({delta} remaining)"
 
 if __name__ == "__main__":
     mcp.run(transport="streamable-http")
